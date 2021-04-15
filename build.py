@@ -40,23 +40,20 @@ function_names = []
 with open(sys.argv[1]) as file:
   text = file.read()
   data = load_yaml(text)
-  print(data, "\n")
 
   resources = get_resources(data)
 
   for resource in resources.items():
     for prop in resource:
-      print(prop)
-    if prop['Type'] == 'Custom::ContactFlow':
-      print("!!! \n")
-      uri = prop['Properties']['ContactFlowUri']
-      
-      new_uri_object = process_contact_flow(uri)
-      prop['Properties']['ContactFlowPath'] = new_uri_object['file_path']
-      prop['Properties']['ContactFlowBucket'] = new_uri_object['bucket']
+      if prop['Type'] == 'Custom::ContactFlow':
+        uri = prop['Properties']['ContactFlowUri']
+        new_uri_object = process_contact_flow(uri)
+        prop['Properties']['ContactFlowPath'] = new_uri_object['file_path']
+        prop['Properties']['ContactFlowBucket'] = new_uri_object['bucket']
 
-
-print(dump_yaml(data))
+new_file = open(sys.argv[1], "w")
+new_file.write(dump_yaml(data))
+new_file.close()
 
 # for mod in export_json['modules']:
 #   if mod['type'] == 'InvokeExternalResource':

@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: ContactFlow CI/CD
+
+Parameters:
+  AmazonConnectARN:
+    Type: String
+    AllowedPattern: arn:aws:connect:[a-z]*-[a-z]*-\d:\d{12}:instance/[A-Za-z0-9]{8}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{12}
+
+  Stage:
+    Type: String
+
+  ContactFlowDeployLambdaArn:
+    Type: String
+    AllowedPattern: arn:(aws[a-zA-Z-]*)?:lambda:[a-z]{2}((-gov)|(-iso(b?)))?-[a-z]+-\d{1}:\d{12}:function:[a-zA-Z0-9-_]+
+    Description: CreateContactFlowLambdaArn output from infrastructure CFN template
+
+  ContactFlowStepFunctionInitLambdaArn:
+    Type: String
+    AllowedPattern: arn:(aws[a-zA-Z-]*)?:lambda:[a-z]{2}((-gov)|(-iso(b?)))?-[a-z]+-\d{1}:\d{12}:function:[a-zA-Z0-9-_]+
+    Description: StepFunctionInitLambdaArn output from infrastructure CFN template.  Used to kick off step function that deploys contact flows.
+
+Resources:
+  DeployContactFlowLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: lambda/deploy-contact-flow
+      Handler: index.handler
+      Runtime: nodejs14.x
+      Role: !GetAtt DeployLambdaRole.Arn
+      Environment:
+        Variables:
+          DEBUG_LOG: true
+          CONNECT_ARN: !Ref AmazonConnectARN
+          REGION: !Ref AWS::Region
+
+  DeployLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: 'Role for Agent Change Processor'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'lambda.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: 'Connect-Access'
+          PolicyDocument:
+            Version: '2012-10-17' # Policy Document
+            Statement:
+              - Effect: Allow
+                Action:
+                  - connect:*
+                Resource:
+                  - !Ref AmazonConnectARN
+  SalesforceContactFlow:
+    Type: Custom::ContactFlow
+    Version: '1.0'
+    Properties:
+      ServiceToken: !Ref ContactFlowDeployLambdaArn
+      ContactFlowUri: test/contact-flows/0.SalesforceDemo.json
+      GetLoan: !GetAtt DeployContactFlowLambda.Arn
+      LexPrimer: !GetAtt DeployContactFlowLambda.Arn
+      SFAPI: !GetAtt DeployContactFlowLambda.Arn
+
+  EntryPointContactFlow:
+    Type: Custom::ContactFlow
+    Version: '1.0'
+    Properties:
+      ServiceToken: !Ref ContactFlowDeployLambdaArn
+      ContactFlowUri: test/contact-flows/0.CallerID.json
+      DemoLambda: !GetAtt DeployContactFlowLambda.Arn

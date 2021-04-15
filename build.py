@@ -45,8 +45,12 @@ with open(sys.argv[1]) as file:
 
   for resource in resources.items():
     for prop in resource:
+      if isinstance(prop, str): # Logical resource names get skipped
+        continue
+      print(prop)
       if prop['Type'] == 'Custom::ContactFlow':
         uri = prop['Properties']['ContactFlowUri']
+
         new_uri_object = process_contact_flow(uri)
         prop['Properties']['ContactFlowPath'] = new_uri_object['file_path']
         prop['Properties']['ContactFlowBucket'] = new_uri_object['bucket']
@@ -54,38 +58,3 @@ with open(sys.argv[1]) as file:
 new_file = open(sys.argv[1], "w")
 new_file.write(dump_yaml(data))
 new_file.close()
-
-# for mod in export_json['modules']:
-#   if mod['type'] == 'InvokeExternalResource':
-#     # TODO: Don't assume this will be true if other external resources are exposed.  For now assuming Lambda function only.
-
-#     for param in mod['parameters']:
-#       if param['name'] == 'FunctionArn':
-#         function_names.append(param['value'])
-      
-
-# unique_functions = np.unique(function_names)
-# function_name_maps = [];
-
-# print(len(unique_functions), " unique Lambdas found.  Select a variable name for each lambda function.")
-# # TODO: Play some kind of closing message when there are no lambdas found
-
-# for function_name in np.unique(function_names):
-#   name = input(function_name + " variable name:")
-#   function_name_maps.append({'function_name': function_name, 'variable_name': name})
-  
-
-# print(function_name_maps)
-# new_export = original_export_string
-
-# for name_map in function_name_maps:
-#   name = name_map['function_name']
-#   variable_name = name_map['variable_name']
-# # TODO: Name new_export better
-#   print("Replacing ", name, " with variable name ", variable_name)
-#   new_export = new_export.replace(name, (format_variable_name(variable_name)))
-
-# print("Export Transform Complete.  Saving new file.")
-# new_file = open(r"newfile.json", "w")
-# new_file.write(new_export)
-# new_file.close()

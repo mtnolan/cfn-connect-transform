@@ -16,7 +16,7 @@ def process_contact_flow(uri):
   s3_client = boto3.client('s3')
 
   bucket = sys.argv[2]
-  file_path = (sys.argv[3] +  os.path.basename(uri))
+  file_path = (sys.argv[3] + "/" + os.path.basename(uri))
 
   try:
     s3_client.upload_file(uri, bucket, file_path)

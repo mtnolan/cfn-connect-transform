@@ -53,6 +53,7 @@ with open(sys.argv[1]) as file:
 
         new_uri_object = process_contact_flow(uri)
         prop['Properties']['ContactFlowPath'] = new_uri_object['file_path']
+        prop['Properties']['BuildNumber'] = sys.argv[3]
         prop['Properties']['ContactFlowBucket'] = new_uri_object['bucket']
 
 new_file = open(sys.argv[1], "w")

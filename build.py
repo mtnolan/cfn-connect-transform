@@ -2,6 +2,7 @@ import sys
 import os
 import boto3
 import logging
+import inquirer
 
 from botocore.exceptions import ClientError
 import yaml
